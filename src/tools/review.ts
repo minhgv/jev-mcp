@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CONTEXT_SCHEMA_VERSION, evidenceLimitations } from "../context.js";
 import { getConfig } from "../config.js";
 import { reviewQuestions } from "../packs/review.js";
 import { minConfidence, reviewAction, reviewComposite } from "../policy.js";
@@ -9,6 +10,11 @@ export const reviewInputSchema = z.object({
   request: z.string().describe("What the user asked for"),
   diff: z.string().describe("Proposed patch, file excerpt, or change summary"),
   tests: z.string().optional().describe("Test output if any"),
+  changed_files: z.array(z.string()).default([]),
+  repository_context: z.string().optional(),
+  evidence_complete: z.boolean().default(true),
+  context_version: z.string().default(CONTEXT_SCHEMA_VERSION),
+  truncated: z.boolean().default(false),
   auto_accept: z.number().min(0).max(1).optional(),
   review_at: z.number().min(0).max(1).optional(),
   model: z.string().optional(),
@@ -25,6 +31,11 @@ export async function runReview(input: ReviewInput) {
       request: input.request,
       diff: input.diff,
       tests: input.tests ?? "",
+      changed_files: input.changed_files,
+      repository_context: input.repository_context ?? "",
+      evidence_complete: input.evidence_complete,
+      context_version: input.context_version,
+      truncated: input.truncated,
     },
     questions: reviewQuestions(),
     model: input.model,
@@ -40,22 +51,34 @@ export async function runReview(input: ReviewInput) {
     testGap: testGap.score,
     blastRadius: blastRadius.score,
   });
-  const action = reviewAction({
-    composite,
-    safeToApply: safeToApply.noul,
-    minConfidence: minConfidence([
-      correctness.confidence,
-      specMatch.confidence,
-      testGap.confidence,
-      blastRadius.confidence,
-    ]),
-    autoAccept,
-    reviewAt,
+  const action = input.evidence_complete && !input.truncated && !result.truncated
+    ? reviewAction({
+        composite,
+        safeToApply: safeToApply.noul,
+        minConfidence: minConfidence([
+          correctness.confidence,
+          specMatch.confidence,
+          testGap.confidence,
+          blastRadius.confidence,
+        ]),
+        autoAccept,
+        reviewAt,
+      })
+    : "review" as const;
+  const limitations = evidenceLimitations({
+    evidence_complete: input.evidence_complete,
+    truncated: input.truncated || result.truncated,
+    redacted: false,
   });
   return {
+    schema_version: "1",
+    tool: "jev_review",
+    context_schema_version: input.context_version,
+    pack: { id: "review", version: "1" },
+    policy: { id: "review-v1", version: "1" },
     model: result.model,
     usage: result.usage,
-    truncated: result.truncated,
+    truncated: result.truncated || input.truncated,
     action,
     composite,
     safe_to_apply: safeToApply.noul,
@@ -72,5 +95,7 @@ export async function runReview(input: ReviewInput) {
       blast_radius: 0.15,
     },
     thresholds: { auto_accept: autoAccept, review_at: reviewAt },
+    missing_evidence: limitations,
+    limitations,
   };
 }

@@ -4,6 +4,9 @@ import { errorMessage } from "./errors.js";
 import { PACK_IDS, packBody, packUri } from "./packs/index.js";
 import { jsonError, jsonResult } from "./result.js";
 import { runCodingLoop, codingLoopInputSchema } from "./tools/coding-loop.js";
+import { runAssessChangeRisk, changeRiskInputSchema } from "./tools/change-risk.js";
+import { runClassifyIssue, classifyIssueInputSchema } from "./tools/classify-issue.js";
+import { runCheckRequirement, requirementInputSchema } from "./tools/requirement.js";
 import { runEvaluate, evaluateInputSchema } from "./tools/evaluate.js";
 import { runRank, rankInputSchema } from "./tools/rank.js";
 import { runReview, reviewInputSchema } from "./tools/review.js";
@@ -34,6 +37,60 @@ export function createJevServer(): McpServer {
     async (args) => {
       try {
         return jsonResult(await runEvaluate(args));
+      } catch (err) {
+        return jsonError(errorMessage(err));
+      }
+    },
+  );
+
+  server.registerTool(
+    "jev_assess_change_risk",
+    {
+      title: "Jev change-risk assessment",
+      description:
+        "Assess security, operational, compatibility, scope, reversibility, and blast-radius risk for a proposed change. The host supplies context; this server does not read Git or files. High-risk or incomplete evidence never returns auto.",
+      inputSchema: changeRiskInputSchema,
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+    },
+    async (args) => {
+      try {
+        return jsonResult(await runAssessChangeRisk(args));
+      } catch (err) {
+        return jsonError(errorMessage(err));
+      }
+    },
+  );
+
+  server.registerTool(
+    "jev_check_requirement",
+    {
+      title: "Jev requirement coverage",
+      description:
+        "Check each supplied requirement or acceptance criterion against a host-supplied diff and verification evidence. Returns criterion-level covered, partial, not_covered, or not_verifiable statuses.",
+      inputSchema: requirementInputSchema,
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+    },
+    async (args) => {
+      try {
+        return jsonResult(await runCheckRequirement(args));
+      } catch (err) {
+        return jsonError(errorMessage(err));
+      }
+    },
+  );
+
+  server.registerTool(
+    "jev_classify_issue",
+    {
+      title: "Jev issue classifier",
+      description:
+        "Classify an issue by category, severity, urgency, and an allowlisted owner candidate. The tool may return unknown; it must not invent an owner.",
+      inputSchema: classifyIssueInputSchema,
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+    },
+    async (args) => {
+      try {
+        return jsonResult(await runClassifyIssue(args));
       } catch (err) {
         return jsonError(errorMessage(err));
       }

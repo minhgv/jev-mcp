@@ -1,6 +1,6 @@
 {
   "name": "jev-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP server that brings TypeSafe Jev cheap typed decisions to Cursor, Codex, and any MCP client",
   "type": "module",
   "main": "./dist/index.js",
@@ -37,7 +37,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://origin.cursor.com/git/acidburn/tmp-58194044fbdb4219.git"
+    "url": "https://github.com/minhgv/jev-mcp.git"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",

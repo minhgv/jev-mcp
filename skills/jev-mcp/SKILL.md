@@ -1,39 +1,51 @@
 ---
 name: jev-mcp
 description: >
-  Use the jev-mcp server for cheap, typed Jev judgments while coding in Cursor or Codex.
-  Call it to route the next step, pick a model tier, screen untrusted text, rank candidates,
-  verify claims, and review diffs. Jev does not write code.
+  Use the jev-mcp MCP server for bounded, typed Jev judgments while coding.
+  It routes coding-loop decisions, reviews diffs, assesses change risk, checks requirements,
+  classifies issues, verifies claims, screens untrusted text, and ranks host-supplied candidates.
+  Jev does not write code or inspect the repository.
 ---
 
 # Use Jev while coding
 
-Jev (TypeSafe System One) is a **decision model**. It returns Choice / Score / Noul answers with probabilities. It cannot generate code, diffs, or explanations. The host (Cursor or Codex) still edits files and runs commands.
+Jev is a typed decision model. It returns Choice / Score / Noul answers with probabilities and confidence. The host agent still owns code generation, file edits, Git, tests, and explanations.
 
-This skill is for **calling the jev-mcp MCP tools** during any repo. It is not the official TypeSafe app-building skill.
+## Shared boundary
 
-## When to call which tool
+The MCP server is repository-blind and read-only. The host or wrapper must collect a bounded context bundle, redact secrets, identify truncation, and pass requirements/tests/evidence explicitly. Never ask this server to run Git or inspect the whole tree.
 
-- `jev_coding_loop` before spending a frontier turn on retry / stop / which model tier / whether to ask the user.
-- `jev_screen` before reading fetched pages, pasted logs from strangers, or other untrusted text. Skip first-party files already in the repo.
-- `jev_rank` before dumping a large file/symbol/error list into context. Pass the candidates in; Jev does not index the tree.
-- `jev_review` on a proposed diff before you declare the task done.
-- `jev_verify` when a PR description, comment, or agent brief makes factual claims about a diff, log, or document.
-- `jev_evaluate` only when no recipe fits. Write **atomic** questions. Put policy (weights, thresholds) in the follow-up, not in one mega-prompt.
+For a change, capture a baseline before work and include the baseline-to-current diff plus relevant untracked source/docs. Exclude `.env*`, credentials, private keys, tokens, `node_modules`, `.next`, `dist`, and build output.
 
-## How to read the result
+## Tool selection
 
-- `action: auto` — take the typed answer and proceed.
-- `action: review` — proceed with caution, or ask the user if stakes are high.
-- `action: escalate` — do not guess; ask the user or use a reasoning model.
-- Typed output is an interface, not ground truth. Calibrate thresholds against your repo if you enforce them.
+- `jev_coding_loop` before a frontier retry/stop/model-tier/focus decision.
+- `jev_review` for the canonical diff review gate before declaring a patch done. There is no separate `jev_check_diff` tool.
+- `jev_assess_change_risk` for protected paths, security, operational impact, compatibility, reversibility, scope drift, and blast radius.
+- `jev_check_requirement` for criterion-level covered/partial/not_covered/not_verifiable results.
+- `jev_classify_issue` for category, severity, urgency, and an allowlisted owner candidate. It may return `unknown`; never invent ownership.
+- `jev_verify` for claims against supplied evidence.
+- `jev_screen` before reading untrusted fetched or pasted text.
+- `jev_rank` when choosing among a bounded candidate list supplied by the host.
+- `jev_evaluate` only when no recipe fits; keep questions atomic.
+
+Keep risk, requirement, and issue classification as separate calls. Do not flatten them into one generic review question.
+
+## Policy handling
+
+- `action: auto` — proceed only within the host’s configured policy.
+- `action: review` — inspect evidence and run deterministic checks; ask for human review when stakes are high.
+- `action: escalate` — do not guess; route to a stronger reasoning or human path.
+
+High-risk/security-sensitive changes, protected paths, missing evidence, redaction/truncation, and low confidence must not silently become `auto`. Compiler, tests, AST checks, SAST, and dependency checks remain authoritative deterministic gates.
 
 ## Do not
 
-- Ask Jev to write code, commit messages, or explanations.
-- Ask Jev to count, do math, or compare dates. Do that in code.
-- Hide several judgments in one question.
-- Send huge unrelated state. Filter first, then judge.
+- Ask Jev to write code, explanations, commit messages, or shell commands.
+- Treat a Jev probability as ground truth.
+- Send secrets, credentials, private keys, or unbounded repository state.
+- Ask Jev to count, calculate, or compare dates; do that in code.
+- Claim a review passed when the result is `review`, `escalate`, truncated, or missing required evidence.
 
 ## Official docs
 

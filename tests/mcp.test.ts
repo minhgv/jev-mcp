@@ -18,7 +18,7 @@ after(() => {
   }
 });
 
-test("MCP lists six tools and five packs", async () => {
+test("MCP lists nine tools and eight packs", async () => {
   const server = createJevServer();
   const client = new Client({ name: "test", version: "0.0.0" });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
@@ -27,6 +27,9 @@ test("MCP lists six tools and five packs", async () => {
     const tools = await client.listTools();
     const names = tools.tools.map((tool) => tool.name).sort();
     assert.deepEqual(names, [
+      "jev_assess_change_risk",
+      "jev_check_requirement",
+      "jev_classify_issue",
       "jev_coding_loop",
       "jev_evaluate",
       "jev_rank",
@@ -35,7 +38,7 @@ test("MCP lists six tools and five packs", async () => {
       "jev_verify",
     ]);
     const resources = await client.listResources();
-    assert.equal(resources.resources.length, 5);
+    assert.equal(resources.resources.length, 8);
     const pack = await client.readResource({ uri: "jev://packs/coding-loop" });
     assert.ok(pack.contents[0] && "text" in pack.contents[0]);
     const called = await client.callTool({

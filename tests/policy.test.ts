@@ -7,6 +7,8 @@ import {
   reviewAction,
   reviewComposite,
   screenRecommendation,
+  changeRiskAction,
+  requirementAction,
 } from "../src/policy.ts";
 
 test("confidence is 1 when a choice is certain", () => {
@@ -89,5 +91,21 @@ test("screenRecommendation blocks injection", () => {
   assert.equal(
     screenRecommendation({ injection: 0.04, substance: 0.9, relevance: 0.9, blockAt: 0.75, reviewAt: 0.25 }),
     "pass",
+  );
+});
+
+test("change risk never auto-accepts high risk or incomplete evidence", () => {
+  assert.equal(changeRiskAction({ risk: "high", confidence: 0.95, evidenceComplete: true }), "review");
+  assert.equal(changeRiskAction({ risk: "low", confidence: 0.95, evidenceComplete: false }), "review");
+});
+
+test("requirement policy escalates unverified requirements", () => {
+  assert.equal(
+    requirementAction({ statuses: ["covered", "not_verifiable"], minConfidence: 0.9, evidenceComplete: true }),
+    "review",
+  );
+  assert.equal(
+    requirementAction({ statuses: ["not_covered"], minConfidence: 0.9, evidenceComplete: true }),
+    "escalate",
   );
 });

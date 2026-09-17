@@ -6,6 +6,9 @@ import { runRank } from "../src/tools/rank.ts";
 import { runReview } from "../src/tools/review.ts";
 import { runScreen } from "../src/tools/screen.ts";
 import { runVerify } from "../src/tools/verify.ts";
+import { runAssessChangeRisk } from "../src/tools/change-risk.ts";
+import { runCheckRequirement } from "../src/tools/requirement.ts";
+import { runClassifyIssue } from "../src/tools/classify-issue.ts";
 import { JevConfigError } from "../src/errors.ts";
 import { systemOne } from "../src/typesafe.ts";
 
@@ -161,4 +164,47 @@ test("missing API key without mock throws a config error", async () => {
       process.env.TYPESAFE_API_KEY = key;
     }
   }
+});
+
+test("change risk returns a governed result for a production auth diff", async () => {
+  const result = await runAssessChangeRisk({
+    request: "Refactor password reset authentication",
+    diff: "Change auth middleware and force push production after DROP TABLE users;",
+    changed_files: ["src/auth/reset.ts", "migrations/001.sql"],
+    tests: "No integration tests were run",
+    deployment_context: "production",
+  });
+  assert.equal(result.tool, "jev_assess_change_risk");
+  assert.equal(result.schema_version, "1");
+  assert.ok(["review", "escalate"].includes(result.action));
+  assert.ok(["low", "medium", "high"].includes(result.risk.level));
+  assert.ok(Array.isArray(result.missing_evidence));
+});
+
+test("requirement check returns criterion-level statuses", async () => {
+  const result = await runCheckRequirement({
+    requirements: [
+      { id: "R1", text: "Limit reset attempts to five per hour" },
+      { id: "R2", text: "Return HTTP 429 after the limit" },
+    ],
+    diff: "Implement five reset attempts per hour and return HTTP 429.",
+    tests: "All tests passed",
+  });
+  assert.equal(result.tool, "jev_check_requirement");
+  assert.equal(result.requirements.length, 2);
+  assert.ok(result.requirements.every((item) =>
+    ["covered", "partial", "not_covered", "not_verifiable"].includes(item.status),
+  ));
+});
+
+test("issue classification constrains owner choices", async () => {
+  const result = await runClassifyIssue({
+    issue: "Users are charged twice when retrying a payment in production.",
+    owner_candidates: ["payments", "platform", "unknown"],
+  });
+  assert.equal(result.tool, "jev_classify_issue");
+  assert.equal(result.action, "review");
+  assert.ok(result.classification.owner_candidates.includes(result.classification.owner));
+  assert.ok(["low", "medium", "high", "critical"].includes(result.classification.severity));
+  assert.ok(["low", "medium", "high"].includes(result.classification.urgency));
 });

@@ -1,40 +1,49 @@
 # jev-mcp
 
-MCP server that puts [TypeSafe Jev](https://docs.typesafe.ai/introduction.md) on the coding loop in **Cursor**, **Codex**, and any other MCP client.
+MCP server that puts [TypeSafe Jev](https://docs.typesafe.ai/introduction.md) on the coding loop for OpenCode, OMP, Cursor, Codex, CI, and other MCP clients.
 
-Jev is not a chatbot. It is a System One evaluation model: you send `state` plus typed **Choice / Score / Noul** questions, and it returns probabilities and confidence in a few hundred milliseconds. It cannot write code. Cursor and Codex still generate and edit; this server is the cheap decision layer you can call on every turn.
-
-Questions in one request run in parallel. That is the cheap swarm: many atomic judgments, then policy in code.
-
-## Documentation
-
-| Doc | Contents |
-| --- | --- |
-| [Architecture](docs/architecture.md) | Process model, source map, confidence, limits |
-| [Tools](docs/tools.md) | Arguments, outputs, and when to call each tool |
-| [Install](docs/install.md) | Cursor, Codex, GitHub publish, Windows `D:\` checkout |
-| [Configuration](docs/configuration.md) | Env vars, thresholds, tests |
-| [Agent skill](skills/jev-mcp/SKILL.md) | Instructions the host agent should follow |
-| [AGENTS.md](AGENTS.md) | Short pointer for Cursor / Codex |
+Jev is a typed decision model, not a coding agent. The host owns files, Git, shell, code generation, and context collection. `jev-mcp` sends bounded state plus typed Choice / Score / Noul questions to Jev, then applies deterministic policy in TypeScript.
 
 ## Tools
 
 | Tool | Use when |
 | --- | --- |
-| `jev_coding_loop` | Before a frontier retry/stop/model-tier decision |
-| `jev_review` | Before declaring a patch done |
-| `jev_verify` | Claims vs evidence (PR text, diffs, docs) |
-| `jev_screen` | Untrusted paste/fetch, before the agent reads it |
-| `jev_rank` | Rank files, symbols, errors, or skills (you pass candidates) |
-| `jev_evaluate` | Escape hatch: raw System One questions |
+| `jev_coding_loop` | Decide retry / stop / model tier / focus before spending a frontier turn |
+| `jev_review` | Canonical diff review before declaring a change done; no `jev_check_diff` alias is needed |
+| `jev_assess_change_risk` | Assess security, operational, compatibility, scope, reversibility, and blast-radius risk |
+| `jev_check_requirement` | Check requirements and acceptance criteria against a diff and verification evidence |
+| `jev_classify_issue` | Classify category, severity, urgency, and an allowlisted owner candidate |
+| `jev_verify` | Check claims against supplied evidence |
+| `jev_screen` | Screen untrusted fetched or pasted text before the agent reads it |
+| `jev_rank` | Rank a candidate list supplied by the host |
+| `jev_evaluate` | Escape hatch for a custom typed question pack |
 
-Every tool returns typed answers, token `usage`, and `action`: `auto` | `review` | `escalate`. Thresholds are named constants in code, overridable per call.
+Every tool returns typed answers, usage, truncation metadata, and a deterministic `action`:
 
-Question packs are also MCP resources at `jev://packs/{coding-loop,review,verify,screen,rank}`.
+- `auto` — the configured policy permits automated continuation.
+- `review` — more evidence or human/agent review is required.
+- `escalate` — do not guess; route to a stronger governance or human path.
+
+Question packs are exposed as resources at `jev://packs/{coding-loop,review,verify,screen,rank,change-risk,requirement,issue}`.
+
+## Diff-gate boundary
+
+`jev-mcp` does **not** read the repository, run Git, execute shell commands, or apply patches. An OpenCode plugin, OMP extension, CLI, or CI wrapper must build the context bundle and call `jev_review`.
+
+The host-side context builder should:
+
+1. Snapshot a baseline commit before the task.
+2. Collect baseline-to-current changes, including relevant untracked source/docs.
+3. Exclude generated/build/dependency artifacts.
+4. Redact secrets and report redaction or truncation explicitly.
+5. Attach requirements, tests, and verification output.
+6. Send only the bounded context needed for the selected tool.
+
+The server validates and evaluates the supplied context; it does not assume that missing evidence means “no problem.”
 
 ## Quick start
 
-Node 20+.
+Node 20+:
 
 ```bash
 npm install
@@ -42,179 +51,86 @@ npm run build
 node dist/index.js doctor
 ```
 
-Get a TypeSafe key from [console.typesafe.ai/settings/keys](https://console.typesafe.ai/settings/keys). Without a key, set `JEV_MCP_MOCK=1` for a deterministic local judge (tests and demos only).
-
-**Cursor** — copy [examples/cursor.mcp.json](examples/cursor.mcp.json) into `.cursor/mcp.json` and point `args` at this repo’s `dist/index.js` (absolute path). Pass the key in `env`. Copy [skills/jev-mcp/SKILL.md](skills/jev-mcp/SKILL.md) into the project.
-
-**Codex**
+For local deterministic tests without a key:
 
 ```bash
-codex mcp add jev --env TYPESAFE_API_KEY=ts_... -- node /absolute/path/to/jev-mcp/dist/index.js
-```
-
-Windows `D:\` checkout (after the GitHub remote exists):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\checkout-d-drive.ps1 -RepoUrl git@github.com:<you>/jev-mcp.git
-```
-
-Full host-specific steps: [docs/install.md](docs/install.md).
-
-## CLI
-
-```bash
-node dist/index.js
-node dist/index.js doctor
+JEV_MCP_MOCK=1 npm test
 JEV_MCP_MOCK=1 node dist/index.js eval --json '{
-  "state": "Help, payouts have been failing for 3 days. ASAP.",
+  "state": "Help! Payouts have been failing for 3 days.",
   "questions": {
     "urgent": { "type": "noul", "instructions": "Is this urgent?" }
   }
 }'
 ```
 
-## Environment
+For live evaluation, provide `TYPESAFE_API_KEY` through the MCP host environment. Never commit or print it.
 
-| Variable | Role |
-| --- | --- |
-| `TYPESAFE_API_KEY` | Live TypeSafe API |
-| `JEV_MCP_MODEL` | Default `jev-latest` |
-| `TYPESAFE_BASE_URL` | Optional API root |
-| `JEV_MCP_MOCK` | `1` = local deterministic judge |
-| `JEV_MCP_AUTO_ACCEPT` | Default `0.8` |
-| `JEV_MCP_REVIEW_AT` | Default `0.5` |
-| `JEV_MCP_BLOCK_AT` | Default `0.75` (screen) |
+## OpenCode
 
-No key and no mock: tools return a clear error. They do not hang.
-
-## Limits (from TypeSafe, enforced here)
-
-- 64k tokens for all `state` + `questions`; 32k for `state` + the longest question. Oversized state is truncated.
-- Rank: 250 candidates per Jev call (texts capped at 2,000 characters). Larger lists are chunked, then winners are re-ranked.
-- Arithmetic, counts, and date math stay in TypeScript. Jev is not a calculator and does not generate text.
-
-## Develop
-
-```bash
-npm test
-npm run typecheck
-```
-
-Live API tests: `TYPESAFE_API_KEY=ts_... npm test`
-
-## What this is not
-
-- Not a filesystem or shell MCP (the host already has those)
-- Not a swarm of chat models
-- Not a repo indexer (`jev_rank` only ranks candidates you pass in)
-
-
-| Tool | Use when |
-| --- | --- |
-| `jev_coding_loop` | Before a frontier retry/stop/model-tier decision |
-| `jev_review` | Before declaring a patch done |
-| `jev_verify` | Claims vs evidence (PR text, diffs, docs) |
-| `jev_screen` | Untrusted paste/fetch, before the agent reads it |
-| `jev_rank` | Rank files, symbols, errors, or skills (you pass candidates) |
-| `jev_evaluate` | Escape hatch: raw System One questions |
-
-Every tool returns typed answers, token `usage`, and `action`: `auto` | `review` | `escalate`. Thresholds are named constants in code, overridable per call.
-
-Question packs are also MCP resources at `jev://packs/{coding-loop,review,verify,screen,rank}`.
-
-## Install
-
-Node 20+. Build this repo:
-
-```bash
-npm install
-npm run build
-```
-
-Get a TypeSafe key from [console.typesafe.ai/settings/keys](https://console.typesafe.ai/settings/keys). Without a key, set `JEV_MCP_MOCK=1` for a deterministic local judge (tests and demos only).
-
-### Cursor
-
-Copy [examples/cursor.mcp.json](examples/cursor.mcp.json) into `.cursor/mcp.json` and point `args` at this repo’s `dist/index.js` (absolute path). Pass the key in `env`; some hosts drop inherited environment variables.
+Add one local MCP server entry. All tools are exposed from the same process:
 
 ```json
 {
-  "mcpServers": {
-    "jev": {
-      "command": "node",
-      "args": ["/absolute/path/to/jev-mcp/dist/index.js"],
-      "env": {
-        "TYPESAFE_API_KEY": "ts_..."
-      }
+  "mcp": {
+    "jev-mcp": {
+      "type": "local",
+      "command": ["node", "/absolute/path/to/jev-mcp/dist/index.js"],
+      "environment": {
+        "TYPESAFE_API_KEY": "{env:TYPESAFE_API_KEY}"
+      },
+      "enabled": true
     }
   }
 }
 ```
 
-Copy [skills/jev-mcp/SKILL.md](skills/jev-mcp/SKILL.md) into the project so the agent actually calls the tools.
+Use `jev_review` for the canonical diff gate. Use `jev_assess_change_risk` for governance/risk decisions and `jev_check_requirement` for traceability; do not merge these question packs into one generic review.
 
-### Codex
+## OMP
 
-```bash
-npm run build
-codex mcp add jev --env TYPESAFE_API_KEY=ts_... -- node /absolute/path/to/jev-mcp/dist/index.js
-```
-
-See [examples/codex.config.toml](examples/codex.config.toml). The same binary works with Claude Code, Amp, and other stdio MCP clients.
-
-## CLI
-
-```bash
-# stdio MCP (default)
-node dist/index.js
-
-# env / key / tiny ping
-node dist/index.js doctor
-
-# one-shot evaluate
-JEV_MCP_MOCK=1 node dist/index.js eval --json '{
-  "state": "Help, payouts have been failing for 3 days. ASAP.",
-  "questions": {
-    "urgent": { "type": "noul", "instructions": "Is this urgent?" }
-  }
-}'
-```
+Reuse the same server or a thin CLI adapter around the same core. The shared skill belongs in the configured OMP skill directories. OMP’s `@advisor` remains a strategic text/planning model; Jev is the typed quality and safety decision layer beside it.
 
 ## Environment
 
 | Variable | Role |
 | --- | --- |
-| `TYPESAFE_API_KEY` | Live TypeSafe API |
+| `TYPESAFE_API_KEY` | Live TypeSafe API credential |
 | `JEV_MCP_MODEL` | Default `jev-latest` |
 | `TYPESAFE_BASE_URL` | Optional API root |
-| `JEV_MCP_MOCK` | `1` = local deterministic judge |
-| `JEV_MCP_AUTO_ACCEPT` | Default `0.8` |
-| `JEV_MCP_REVIEW_AT` | Default `0.5` |
-| `JEV_MCP_BLOCK_AT` | Default `0.75` (screen) |
+| `JEV_MCP_MOCK` | `1` enables deterministic local mock mode |
+| `JEV_MCP_AUTO_ACCEPT` | Default automation threshold: `0.8` |
+| `JEV_MCP_REVIEW_AT` | Default review threshold: `0.5` |
+| `JEV_MCP_BLOCK_AT` | Screen block threshold: `0.75` |
 
-No key and no mock: tools return a clear error. They do not hang.
-
-## Limits (from TypeSafe, enforced here)
-
-- 64k tokens for all `state` + `questions`; 32k for `state` + the longest question. Oversized state is truncated.
-- Rank: 250 candidates per Jev call (texts capped at 2,000 characters). Larger lists are chunked, then winners are re-ranked.
-- Arithmetic, counts, and date math stay in TypeScript. Jev is not a calculator and does not generate text.
-
-## Develop
+## Development
 
 ```bash
-npm test          # mock tests; live e2e skipped without TYPESAFE_API_KEY
+npm test
 npm run typecheck
+npm run build
 ```
 
-Live API tests:
+Tests are mock-first and do not require a live key. Live tests are opt-in and must use sanitized fixtures:
 
 ```bash
-TYPESAFE_API_KEY=ts_... npm test
+TYPESAFE_API_KEY=... npm test
 ```
 
-## What this is not
+## Design rules
 
-- Not a filesystem or shell MCP (the host already has those)
-- Not a swarm of chat models
-- Not a repo indexer (`jev_rank` only ranks candidates you pass in)
+- Keep the MCP server repository-blind and read-only.
+- Keep question packs tool-specific; do not turn every tool into `jev_review`.
+- Keep policy deterministic and independently unit-testable without a network call.
+- Treat probability/confidence as signals, not truth.
+- Missing, redacted, or truncated evidence must remain visible in the result.
+- Arithmetic, counts, and date calculations stay in TypeScript.
+- Never ask Jev to write code, prose, commit messages, or explanations.
+
+## Documentation
+
+- [Architecture](docs/architecture.md)
+- [Tools](docs/tools.md)
+- [Install](docs/install.md)
+- [Configuration](docs/configuration.md)
+- [Agent skill](skills/jev-mcp/SKILL.md)
+- [AGENTS.md](AGENTS.md)

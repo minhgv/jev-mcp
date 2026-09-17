@@ -44,6 +44,10 @@ export function minConfidence(values: Array<number | undefined>): number {
   return Math.min(...present);
 }
 
+export function noulConfidence(noul: number): number {
+  return Math.min(1, Math.abs(2 * noul - 1));
+}
+
 export function codingLoopAction(input: {
   nextChoice: string;
   nextConfidence: number;
@@ -141,4 +145,50 @@ export function reviewComposite(scores: {
 
 function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));
+}
+
+export type ChangeRiskLevel = "low" | "medium" | "high";
+export type RequirementStatus = "covered" | "partial" | "not_covered" | "not_verifiable";
+
+export function changeRiskAction(input: {
+  risk: ChangeRiskLevel;
+  confidence: number;
+  evidenceComplete: boolean;
+  securitySensitive?: number;
+  needsHumanReview?: number;
+  autoAccept?: number;
+  reviewAt?: number;
+}): PolicyAction {
+  const autoAccept = input.autoAccept ?? DEFAULT_AUTO_ACCEPT;
+  const reviewAt = input.reviewAt ?? DEFAULT_REVIEW_AT;
+  if (!input.evidenceComplete || input.confidence < reviewAt) {
+    return input.confidence < reviewAt ? "escalate" : "review";
+  }
+  if (input.risk === "high" || (input.securitySensitive ?? 0) >= autoAccept || (input.needsHumanReview ?? 0) >= autoAccept) {
+    return "review";
+  }
+  if (input.risk === "medium" || input.confidence < autoAccept) {
+    return "review";
+  }
+  return "auto";
+}
+
+export function requirementAction(input: {
+  statuses: RequirementStatus[];
+  minConfidence: number;
+  evidenceComplete: boolean;
+  autoAccept?: number;
+  reviewAt?: number;
+}): PolicyAction {
+  const reviewAt = input.reviewAt ?? DEFAULT_REVIEW_AT;
+  if (input.statuses.some((status) => status === "not_covered")) {
+    return "escalate";
+  }
+  if (!input.evidenceComplete || input.minConfidence < reviewAt) {
+    return input.minConfidence < reviewAt ? "escalate" : "review";
+  }
+  if (input.statuses.some((status) => status === "partial" || status === "not_verifiable")) {
+    return "review";
+  }
+  return "auto";
 }
