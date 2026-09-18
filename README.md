@@ -60,6 +60,32 @@ JEV_MCP_MOCK=1 node dist/index.js ci-shadow --request "Review this change"
 
 `ci-shadow` is intentionally non-blocking: it reports `would_block` and the v2 result but exits successfully. Set `JEV_MCP_TRUSTED_ADAPTERS` only in a controlled server environment; the caller cannot self-authorize trust. Production blocking CI and automatic acceptance remain disabled until shadow evidence is calibrated.
 
+## Why use jev-mcp?
+
+`jev-mcp` adds a governed decision layer around coding agents. Jev supplies typed judgments; the host still owns the repository, tools, tests, and final action. The value comes from combining model judgment with bounded evidence and deterministic policy.
+
+### Benefits in practice
+
+- **One decision layer across clients.** OpenCode, OMP, Cursor, Codex, and CI can use the same MCP server, question packs, result contract, and policy instead of maintaining separate review prompts.
+- **Less guesswork from the agent.** Coding-loop routing, diff review, risk assessment, requirement checks, issue classification, claim verification, screening, and ranking are exposed as focused typed recipes rather than one vague "review this" prompt.
+- **Evidence takes precedence over confidence.** Missing checks, truncated context, redacted material, subject mismatches, and incomplete manifests remain visible and prevent a silent pass.
+- **Deterministic safety floors.** Protected paths, security-sensitive changes, high operational or compatibility risk, large blast radius, irreversible changes, and scope drift force review regardless of the model's preferred answer.
+- **Traceable decisions.** Context and result v2 bind an evaluation to a repository subject, sanitized digest, verification records, policy profile, provenance, pack version, reason codes, and limitations.
+- **A safer path to CI adoption.** The Git collector and `ci-shadow` command support advisory evaluation before any blocking policy is considered. Teams can observe `would_block` results and calibrate them against real changes first.
+- **Bounded and reusable context handling.** The adapter owns Git collection and redaction, while the MCP server stays repository-blind and read-only. This keeps access boundaries clear and makes the same collector usable from different hosts.
+- **A cheaper path for routine decisions.** Repetitive, structured judgments can be handled by Jev, leaving frontier models for ambiguous implementation and architecture work. The repository does not yet claim a measured cost reduction; that requires production telemetry.
+
+### Value by role
+
+- **Developers and coding agents:** clearer retry, stop, review, and escalation decisions before spending another turn or declaring a change complete.
+- **Tech leads and architects:** consistent review and risk semantics across agents, with policy kept in code and independently testable.
+- **IT governance and management:** an auditable record of what was reviewed, what evidence was available, and why a change required human attention.
+- **CI and platform teams:** a shared collector, revision-bound evidence, stable result codes, and a shadow rollout path instead of an immediate AI merge gate.
+
+### What jev-mcp does not replace
+
+Jev is a semantic decision layer. It does not replace the compiler, unit and integration tests, AST checks, SAST, SCA, deployment controls, or human review. It also does not grant permission to merge, deploy, or execute. In v0.3, CI evaluation is advisory and shadow-only; production blocking requires calibration, auditability, and an explicit approved policy.
+
 ## Quick start
 
 Node 20+:
