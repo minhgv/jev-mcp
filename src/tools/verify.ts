@@ -38,7 +38,7 @@ export async function runVerify(input: VerifyInput) {
   });
 
   const results = input.claims.map((claim, index) => {
-    const answer = asChoice(result.answers[`claim_${index}`]);
+    const answer = asChoice(result.answers[`claim_${index}`], ["verified", "contradicted", "unsupported"]);
     const verdict = answer.choice as "verified" | "contradicted" | "unsupported";
     const itemAction = actionFromConfidence(answer.confidence, autoAccept, 0.5);
     return {

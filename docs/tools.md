@@ -10,6 +10,21 @@ Every tool returns JSON with the common fields:
 
 The server evaluates only supplied state. It does not run Git, inspect files, execute commands, or apply changes. Question templates are MCP resources at `jev://packs/{coding-loop,review,verify,screen,rank,change-risk,requirement,issue}`.
 
+## v2 review contract
+
+Adapters can send `jev_review` as `{ "context": <context-v2>, "model": "..." }`. Context v2 requires:
+
+- repository and baseline/head subject identity plus a stable sanitized digest;
+- complete changed-file manifest, including rename/delete/binary/generated metadata;
+- section-level `available`, `truncated`, and `redacted` flags;
+- structured required-check records tied to the tested revision;
+- server-resolved adapter provenance and `local`/`pre_commit`/`ci` policy profile;
+- deterministic `risk_signals` for security sensitivity, operational/compatibility/blast-radius risk, reversibility, and scope drift.
+
+`jev_review` is the only gate-capable tool. Its v2 result includes `result_schema_version`, `gate_eligibility`, stable `reason_codes`, typed limitations, risk signals, and a common error envelope. Unknown Jev output, incomplete evidence, protected paths, untrusted provenance, non-CI profiles, and high component risk cannot produce an eligible pass. The trusted adapter allowlist is server-side via `JEV_MCP_TRUSTED_ADAPTERS`; request data cannot elevate itself.
+
+The repository-blind boundary is preserved: use `node dist/index.js context ...` or `ci-shadow ...` outside the MCP server to collect Git state. `ci-shadow` is advisory and reports `would_block` without failing the CI process.
+
 ## `jev_coding_loop`
 
 Call before spending a frontier turn on retry / stop / model tier.

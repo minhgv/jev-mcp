@@ -15,6 +15,15 @@ Jev is a typed decision model. It returns Choice / Score / Noul answers with pro
 
 The MCP server is repository-blind and read-only. The host or wrapper must collect a bounded context bundle, redact secrets, identify truncation, and pass requirements/tests/evidence explicitly. Never ask this server to run Git or inspect the whole tree.
 
+For a hardened v0.3 workflow, use the adapter-side commands:
+
+```bash
+node dist/index.js context --request "Review this change" --profile ci
+JEV_MCP_MOCK=1 node dist/index.js ci-shadow --request "Review this change"
+```
+
+`context` emits context schema v2. It must include a complete file manifest, section-level omission flags, structured verification records tied to the tested revision, provenance, policy profile, and deterministic risk signals. `ci-shadow` is advisory only: inspect `would_block`, `gate_eligibility`, and `reason_codes`; it does not block the process. Only a server-side `JEV_MCP_TRUSTED_ADAPTERS` allowlist can make a CI adapter eligible, and the default is empty.
+
 For a change, capture a baseline before work and include the baseline-to-current diff plus relevant untracked source/docs. Exclude `.env*`, credentials, private keys, tokens, `node_modules`, `.next`, `dist`, and build output.
 
 ## Tool selection

@@ -34,7 +34,7 @@ export async function runAssessChangeRisk(input: ChangeRiskInput) {
     model: input.model,
   });
 
-  const risk = asChoice(result.answers.risk_level);
+  const risk = asChoice(result.answers.risk_level, ["low", "medium", "high"]);
   const security = asNoul(result.answers.security_sensitive);
   const operational = asScore(result.answers.operational_impact);
   const compatibility = asScore(result.answers.compatibility_risk);

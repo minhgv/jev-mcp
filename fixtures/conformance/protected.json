@@ -1,0 +1,16 @@
+{
+  "context_schema_version": "2",
+  "repository": "github.com/example/repo",
+  "comparison": "baseline_to_head",
+  "request": "Change authentication behavior",
+  "diff": "diff --git a/auth/login.ts b/auth/login.ts",
+  "baseline": "base",
+  "head": "head",
+  "subject_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "manifest": {"complete": true, "files": [{"path": "auth/login.ts", "change": "modified", "binary": false, "generated": false, "protected_classes": ["auth"]}], "omission_reasons": []},
+  "sections": [{"id": "request", "kind": "request", "content": "Change authentication behavior", "available": true, "truncated": false, "redacted": false}, {"id": "diff", "kind": "diff", "content": "diff --git a/auth/login.ts b/auth/login.ts", "available": true, "truncated": false, "redacted": false}],
+  "requirements": [],
+  "verification": {"required_check_ids": ["unit"], "records": [{"check_id": "unit", "kind": "test", "executor": "ci", "status": "passed", "subject": {"revision": "head"}, "trusted": true, "result_summary": "passed"}]},
+  "provenance": {"adapter_id": "conformance-adapter", "mode": "trusted_adapter", "run_id": "fixture-protected"},
+  "policy_profile": "ci"
+}

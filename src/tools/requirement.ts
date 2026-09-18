@@ -5,12 +5,16 @@ import { requirementQuestions, REQUIREMENT_STATUSES } from "../packs/requirement
 import { asChoice } from "../result.js";
 import { minConfidence, requirementAction } from "../policy.js";
 import { systemOne } from "../typesafe.js";
+import { assertThresholdOrder } from "../validation.js";
 
-const requirementInput = z.object({ id: z.string().min(1), text: z.string().min(1) });
+const requirementInput = z.object({ id: z.string().min(1).max(200), text: z.string().min(1).max(20_000) });
 
 export const requirementInputSchema = z.object({
-  requirements: z.array(requirementInput).min(1),
-  diff: z.string().min(1),
+  requirements: z.array(requirementInput).min(1).max(100).superRefine((requirements, ctx) => {
+    const ids = requirements.map((requirement) => requirement.id);
+    if (new Set(ids).size !== ids.length) ctx.addIssue({ code: "custom", message: "requirement ids must be unique" });
+  }),
+  diff: z.string().min(1).max(200_000),
   tests: z.string().optional(),
   repository_context: z.string().optional(),
   evidence_complete: z.boolean().default(true),
@@ -27,6 +31,7 @@ export async function runCheckRequirement(input: RequirementInput) {
   const config = getConfig();
   const autoAccept = input.auto_accept ?? config.autoAccept;
   const reviewAt = input.review_at ?? config.reviewAt;
+  assertThresholdOrder({ autoAccept, reviewAt });
   const result = await systemOne({
     state: {
       requirements: input.requirements,
@@ -42,7 +47,7 @@ export async function runCheckRequirement(input: RequirementInput) {
   });
 
   const requirements = input.requirements.map((requirement, index) => {
-    const answer = asChoice(result.answers[`requirement_${index}`]);
+    const answer = asChoice(result.answers[`requirement_${index}`], ["covered", "partial", "not_covered", "not_verifiable"]);
     const status = answer.choice as (typeof REQUIREMENT_STATUSES)[number];
     return {
       id: requirement.id,

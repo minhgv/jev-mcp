@@ -1,3 +1,5 @@
+import { JevConfigError } from "./errors.js";
+
 export type JevConfig = {
   apiKey: string;
   model: string;
@@ -6,6 +8,7 @@ export type JevConfig = {
   autoAccept: number;
   reviewAt: number;
   blockAt: number;
+  trustedAdapterIds: string[];
 };
 
 function numEnv(name: string, fallback: number): number {
@@ -25,8 +28,15 @@ function boolEnv(name: string): boolean {
   return raw === "1" || raw === "true" || raw === "yes";
 }
 
+function trustedAdaptersEnv(): string[] {
+  return (process.env.JEV_MCP_TRUSTED_ADAPTERS ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
 export function getConfig(): JevConfig {
-  return {
+  const config: JevConfig = {
     apiKey: process.env.TYPESAFE_API_KEY?.trim() ?? "",
     model: process.env.JEV_MCP_MODEL?.trim() || "jev-latest",
     baseURL: process.env.TYPESAFE_BASE_URL?.trim() || undefined,
@@ -34,5 +44,9 @@ export function getConfig(): JevConfig {
     autoAccept: numEnv("JEV_MCP_AUTO_ACCEPT", 0.8),
     reviewAt: numEnv("JEV_MCP_REVIEW_AT", 0.5),
     blockAt: numEnv("JEV_MCP_BLOCK_AT", 0.75),
+    trustedAdapterIds: trustedAdaptersEnv(),
   };
+  if (config.reviewAt > config.autoAccept) throw new JevConfigError("JEV_MCP_REVIEW_AT must be <= JEV_MCP_AUTO_ACCEPT");
+  if (config.reviewAt > config.blockAt) throw new JevConfigError("JEV_MCP_REVIEW_AT must be <= JEV_MCP_BLOCK_AT");
+  return config;
 }

@@ -7,9 +7,9 @@ import { actionFromConfidence, minConfidence, noulConfidence } from "../policy.j
 import { systemOne } from "../typesafe.js";
 
 export const classifyIssueInputSchema = z.object({
-  issue: z.string().min(1),
-  repository_context: z.string().optional(),
-  owner_candidates: z.array(z.string().min(1)).min(2),
+  issue: z.string().min(1).max(100_000),
+  repository_context: z.string().max(100_000).optional(),
+  owner_candidates: z.array(z.string().min(1).max(200)).min(2).max(50),
   evidence: z.string().optional(),
   evidence_complete: z.boolean().default(true),
   truncated: z.boolean().default(false),
@@ -34,10 +34,10 @@ export async function runClassifyIssue(input: ClassifyIssueInput) {
     questions: issueQuestions(owners),
     model: input.model,
   });
-  const category = asChoice(result.answers.category);
-  const severity = asChoice(result.answers.severity);
-  const urgency = asChoice(result.answers.urgency);
-  const owner = asChoice(result.answers.owner);
+  const category = asChoice(result.answers.category, ["security", "data_integrity", "reliability", "performance", "compatibility", "usability", "maintainability", "other"]);
+  const severity = asChoice(result.answers.severity, ["low", "medium", "high", "critical"]);
+  const urgency = asChoice(result.answers.urgency, ["low", "medium", "high"]);
+  const owner = asChoice(result.answers.owner, owners);
   const reproduction = asNoul(result.answers.needs_reproduction);
   const confidence = minConfidence([category.confidence, severity.confidence, urgency.confidence, owner.confidence, noulConfidence(reproduction.noul)]);
   const evidenceComplete = input.evidence_complete && !input.truncated && !result.truncated && Boolean(input.evidence);

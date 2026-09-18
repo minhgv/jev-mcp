@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { errorMessage } from "./errors.js";
 import { PACK_IDS, packBody, packUri } from "./packs/index.js";
-import { jsonError, jsonResult } from "./result.js";
+import { jsonError, jsonErrorV2, jsonResult } from "./result.js";
 import { runCodingLoop, codingLoopInputSchema } from "./tools/coding-loop.js";
 import { runAssessChangeRisk, changeRiskInputSchema } from "./tools/change-risk.js";
 import { runClassifyIssue, classifyIssueInputSchema } from "./tools/classify-issue.js";
@@ -38,7 +38,7 @@ export function createJevServer(): McpServer {
       try {
         return jsonResult(await runEvaluate(args));
       } catch (err) {
-        return jsonError(errorMessage(err));
+        return toolError(err, args);
       }
     },
   );
@@ -56,7 +56,7 @@ export function createJevServer(): McpServer {
       try {
         return jsonResult(await runAssessChangeRisk(args));
       } catch (err) {
-        return jsonError(errorMessage(err));
+        return toolError(err, args);
       }
     },
   );
@@ -74,7 +74,7 @@ export function createJevServer(): McpServer {
       try {
         return jsonResult(await runCheckRequirement(args));
       } catch (err) {
-        return jsonError(errorMessage(err));
+        return toolError(err, args);
       }
     },
   );
@@ -92,7 +92,7 @@ export function createJevServer(): McpServer {
       try {
         return jsonResult(await runClassifyIssue(args));
       } catch (err) {
-        return jsonError(errorMessage(err));
+        return toolError(err, args);
       }
     },
   );
@@ -115,7 +115,7 @@ export function createJevServer(): McpServer {
       try {
         return jsonResult(await runCodingLoop(args));
       } catch (err) {
-        return jsonError(errorMessage(err));
+        return toolError(err, args);
       }
     },
   );
@@ -138,7 +138,7 @@ export function createJevServer(): McpServer {
       try {
         return jsonResult(await runReview(args));
       } catch (err) {
-        return jsonError(errorMessage(err));
+        return toolError(err, args);
       }
     },
   );
@@ -161,7 +161,7 @@ export function createJevServer(): McpServer {
       try {
         return jsonResult(await runVerify(args));
       } catch (err) {
-        return jsonError(errorMessage(err));
+        return toolError(err, args);
       }
     },
   );
@@ -184,7 +184,7 @@ export function createJevServer(): McpServer {
       try {
         return jsonResult(await runScreen(args));
       } catch (err) {
-        return jsonError(errorMessage(err));
+        return toolError(err, args);
       }
     },
   );
@@ -207,7 +207,7 @@ export function createJevServer(): McpServer {
       try {
         return jsonResult(await runRank(args));
       } catch (err) {
-        return jsonError(errorMessage(err));
+        return toolError(err, args);
       }
     },
   );
@@ -234,6 +234,16 @@ export function createJevServer(): McpServer {
   }
 
   return server;
+}
+
+function toolError(err: unknown, args: unknown): {
+  isError: true;
+  content: Array<{ type: "text"; text: string }>;
+} {
+  const isV2 = typeof args === "object" && args !== null && "context" in args;
+  return isV2
+    ? jsonErrorV2("JEV_EVALUATION_FAILED", errorMessage(err), false)
+    : jsonError(errorMessage(err));
 }
 
 export async function runStdio(): Promise<void> {

@@ -41,6 +41,25 @@ The host-side context builder should:
 
 The server validates and evaluates the supplied context; it does not assume that missing evidence means “no problem.”
 
+## v0.3 hardened advisory contract
+
+The `context` adapter and v2 `jev_review` path implement the hardened preview contract:
+
+- `context_schema_version: "2"` requires repository/subject identity, complete file manifest, section-level truncation/redaction, verification records, provenance, policy profile, and structured risk signals.
+- Protected paths (`auth/`, `security/`, `billing/`, `database/`, `migration/`, `permission/`, `network/`, `deployment/`, secrets) are classified deterministically and cannot be omitted from the manifest.
+- Evidence completeness is derived from the manifest, sections, required checks, test subject revision, and trusted verification records; caller booleans are not authoritative.
+- `jev_review` v2 returns `result_schema_version: "2"`, `gate_eligibility`, stable reason codes, typed limitations, resolved provenance, and risk signals. Malformed Jev output fails closed.
+- Only a server-configured trusted adapter can be CI gate-eligible. Specialist tools remain advisory and never grant a merge/deploy gate.
+
+The adapter/CI helper runs outside the repository-blind MCP server:
+
+```bash
+node dist/index.js context --request "Review this change" --profile ci
+JEV_MCP_MOCK=1 node dist/index.js ci-shadow --request "Review this change"
+```
+
+`ci-shadow` is intentionally non-blocking: it reports `would_block` and the v2 result but exits successfully. Set `JEV_MCP_TRUSTED_ADAPTERS` only in a controlled server environment; the caller cannot self-authorize trust. Production blocking CI and automatic acceptance remain disabled until shadow evidence is calibrated.
+
 ## Quick start
 
 Node 20+:
@@ -101,6 +120,7 @@ Reuse the same server or a thin CLI adapter around the same core. The shared ski
 | `JEV_MCP_AUTO_ACCEPT` | Default automation threshold: `0.8` |
 | `JEV_MCP_REVIEW_AT` | Default review threshold: `0.5` |
 | `JEV_MCP_BLOCK_AT` | Screen block threshold: `0.75` |
+| `JEV_MCP_TRUSTED_ADAPTERS` | Comma-separated server-side adapter IDs allowed to be CI gate-eligible; default empty |
 
 ## Development
 
@@ -130,6 +150,7 @@ TYPESAFE_API_KEY=... npm test
 
 - [Architecture](docs/architecture.md)
 - [Tools](docs/tools.md)
+- [Context v2/result v2 contract](docs/context-v2.md)
 - [Install](docs/install.md)
 - [Configuration](docs/configuration.md)
 - [Agent skill](skills/jev-mcp/SKILL.md)

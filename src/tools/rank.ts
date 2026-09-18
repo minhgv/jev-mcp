@@ -74,7 +74,7 @@ async function rankOne(query: string, candidates: RankCandidate[], topK: number,
     questions: rankQuestions(query, candidates),
     model,
   });
-  const best = asChoice(result.answers.best);
+  const best = asChoice(result.answers.best, candidates.map((candidate) => candidate.id));
   const exists = asNoul(result.answers.exists).noul;
   const ranked: RankedHit[] = Object.entries(best.probabilities)
     .map(([id, probability]) => ({ id, probability }))

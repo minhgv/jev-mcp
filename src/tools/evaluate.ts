@@ -7,11 +7,11 @@ import { asChoice, asNoul, asScore } from "../result.js";
 
 export const questionInputSchema = z.object({
   type: z.enum(["noul", "choice", "score"]).describe("Jev primitive"),
-  instructions: z.string().describe("One atomic question"),
+  instructions: z.string().min(1).max(4_000).describe("One atomic question"),
   criteria: z
     .union([
       z.record(z.string(), z.string().nullable()),
-      z.array(z.string()),
+      z.array(z.string().max(1_000)).max(16),
       z.object({
         true: z.string().optional(),
         false: z.string().optional(),
@@ -23,10 +23,11 @@ export const questionInputSchema = z.object({
 
 export const evaluateInputSchema = z.object({
   state: z
-    .union([z.string(), z.record(z.string(), z.any()), z.array(z.any())])
+    .union([z.string().max(100_000), z.record(z.string(), z.any()), z.array(z.any())])
     .describe("Shared state to judge: text or JSON"),
   questions: z
     .record(z.string(), questionInputSchema)
+    .refine((questions) => Object.keys(questions).length > 0 && Object.keys(questions).length <= 32, "questions must contain 1..32 entries")
     .describe("Named noul, choice, and score questions evaluated in parallel"),
   model: z.string().optional().describe("Override, default jev-latest"),
 });

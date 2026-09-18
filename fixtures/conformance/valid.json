@@ -1,0 +1,16 @@
+{
+  "context_schema_version": "2",
+  "repository": "github.com/example/repo",
+  "comparison": "baseline_to_head",
+  "request": "Update a non-sensitive UI label",
+  "diff": "diff --git a/src/ui.ts b/src/ui.ts",
+  "baseline": "base",
+  "head": "head",
+  "subject_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "manifest": {"complete": true, "files": [{"path": "src/ui.ts", "change": "modified", "binary": false, "generated": false, "protected_classes": []}], "omission_reasons": []},
+  "sections": [{"id": "request", "kind": "request", "content": "Update a non-sensitive UI label", "available": true, "truncated": false, "redacted": false}, {"id": "diff", "kind": "diff", "content": "diff --git a/src/ui.ts b/src/ui.ts", "available": true, "truncated": false, "redacted": false}],
+  "requirements": [],
+  "verification": {"required_check_ids": ["unit"], "records": [{"check_id": "unit", "kind": "test", "executor": "ci", "status": "passed", "subject": {"revision": "head"}, "trusted": true, "result_summary": "passed"}]},
+  "provenance": {"adapter_id": "conformance-adapter", "mode": "trusted_adapter", "run_id": "fixture-valid"},
+  "policy_profile": "ci"
+}

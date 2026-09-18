@@ -1,0 +1,16 @@
+{
+  "context_schema_version": "2",
+  "repository": "github.com/example/repo",
+  "comparison": "working_tree",
+  "request": "Review an incomplete collection",
+  "diff": "partial diff",
+  "baseline": "base",
+  "head": "head",
+  "subject_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "manifest": {"complete": false, "files": [], "omission_reasons": ["collector_timeout"]},
+  "sections": [{"id": "request", "kind": "request", "content": "Review an incomplete collection", "available": true, "truncated": false, "redacted": false}, {"id": "diff", "kind": "diff", "content": "partial diff", "available": true, "truncated": true, "redacted": false}],
+  "requirements": [],
+  "verification": {"required_check_ids": ["unit"], "records": []},
+  "provenance": {"adapter_id": "conformance-adapter", "mode": "trusted_adapter", "run_id": "fixture-incomplete"},
+  "policy_profile": "ci"
+}

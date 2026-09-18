@@ -4,10 +4,11 @@ import { screenQuestions } from "../packs/screen.js";
 import { screenAction, screenRecommendation } from "../policy.js";
 import { asNoul } from "../result.js";
 import { systemOne } from "../typesafe.js";
+import { assertThresholdOrder } from "../validation.js";
 
 export const screenInputSchema = z.object({
-  text: z.string().describe("Fetched or pasted text before the agent reads it"),
-  purpose: z.string().optional().describe("What the agent is trying to do; enables relevance and skip"),
+  text: z.string().min(1).max(200_000).describe("Fetched or pasted text before the agent reads it"),
+  purpose: z.string().max(20_000).optional().describe("What the agent is trying to do; enables relevance and skip"),
   block_at: z.number().min(0).max(1).optional(),
   review_at: z.number().min(0).max(1).optional(),
   model: z.string().optional(),
@@ -19,6 +20,7 @@ export async function runScreen(input: ScreenInput) {
   const config = getConfig();
   const blockAt = input.block_at ?? config.blockAt;
   const reviewAt = input.review_at ?? 0.25;
+  assertThresholdOrder({ reviewAt, blockAt });
   const hasPurpose = Boolean(input.purpose?.trim());
   const result = await systemOne({
     state: {

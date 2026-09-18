@@ -4,6 +4,7 @@ import { codingLoopQuestions } from "../packs/coding-loop.js";
 import { codingLoopAction } from "../policy.js";
 import { asChoice, asNoul, asScore } from "../result.js";
 import { systemOne } from "../typesafe.js";
+import { assertThresholdOrder } from "../validation.js";
 
 export const codingLoopInputSchema = z.object({
   task: z.string().describe("What the coding agent is trying to do"),
@@ -25,6 +26,7 @@ export async function runCodingLoop(input: CodingLoopInput) {
   const config = getConfig();
   const autoAccept = input.auto_accept ?? config.autoAccept;
   const reviewAt = input.review_at ?? config.reviewAt;
+  assertThresholdOrder({ autoAccept, reviewAt });
   const result = await systemOne({
     state: {
       task: input.task,
@@ -34,13 +36,13 @@ export async function runCodingLoop(input: CodingLoopInput) {
     questions: codingLoopQuestions(),
     model: input.model,
   });
-  const next = asChoice(result.answers.next);
-  const modelTier = asChoice(result.answers.model_tier);
+  const next = asChoice(result.answers.next, ["continue", "retry", "ask_user", "stop"]);
+  const modelTier = asChoice(result.answers.model_tier, ["cheap", "standard", "reasoning"]);
   const risk = asScore(result.answers.risk);
   const doneEnough = asNoul(result.answers.done_enough);
   const needsMore = asNoul(result.answers.needs_more_context);
   const testsLikelyFail = asNoul(result.answers.tests_likely_fail);
-  const focus = asChoice(result.answers.focus);
+  const focus = asChoice(result.answers.focus, ["edit", "search", "test", "read", "plan"]);
   const action = codingLoopAction({
     nextChoice: next.choice,
     nextConfidence: next.confidence,
