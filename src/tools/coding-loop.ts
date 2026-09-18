@@ -8,13 +8,8 @@ import { assertThresholdOrder } from "../validation.js";
 
 export const codingLoopInputSchema = z.object({
   task: z.string().describe("What the coding agent is trying to do"),
-  observation: z
-    .string()
-    .describe("Current turn: last diff, command output, test results, or blocker"),
-  extras: z
-    .record(z.string(), z.any())
-    .optional()
-    .describe("Optional extra JSON fields included in Jev state"),
+  observation: z.string().describe("Current turn: last diff, command output, test results, or blocker"),
+  extras: z.record(z.string(), z.any()).optional().describe("Optional extra JSON fields included in Jev state"),
   auto_accept: z.number().min(0).max(1).optional(),
   review_at: z.number().min(0).max(1).optional(),
   model: z.string().optional(),

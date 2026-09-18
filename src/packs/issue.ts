@@ -44,7 +44,12 @@ export function issueQuestions(ownerCandidates: string[]): Questions {
     owner: {
       type: "choice",
       instructions: "Which allowed owner candidate is the best initial routing target?",
-      criteria: Object.fromEntries(ownerCandidates.map((owner) => [owner, owner === "unknown" ? "No safe owner inference" : `Allowed owner candidate: ${owner}`])),
+      criteria: Object.fromEntries(
+        ownerCandidates.map((owner) => [
+          owner,
+          owner === "unknown" ? "No safe owner inference" : `Allowed owner candidate: ${owner}`,
+        ]),
+      ),
     },
     needs_reproduction: {
       type: "noul",

@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { parseQuestions } from "../src/questions.ts";
+import { estimateTokens, fitState, MAX_STATE_PLUS_LONGEST_QUESTION_TOKENS } from "../src/limits.ts";
 import { codingLoopQuestions } from "../src/packs/coding-loop.ts";
+import { rankQuestions } from "../src/packs/rank.ts";
 import { reviewQuestions } from "../src/packs/review.ts";
 import { screenQuestions } from "../src/packs/screen.ts";
 import { verifyQuestions } from "../src/packs/verify.ts";
-import { rankQuestions } from "../src/packs/rank.ts";
-import { estimateTokens, fitState, MAX_STATE_PLUS_LONGEST_QUESTION_TOKENS } from "../src/limits.ts";
+import { parseQuestions } from "../src/questions.ts";
 
 test("parseQuestions rejects empty maps", () => {
   assert.throws(() => parseQuestions({}), /at least one/);

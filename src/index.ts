@@ -1,9 +1,9 @@
 #!/usr/bin/env node
+import { runCiShadow } from "./ci-shadow.js";
 import { runDoctor, runEval } from "./cli.js";
 import { runContext } from "./collector-cli.js";
-import { runCiShadow } from "./ci-shadow.js";
-import { runStdio } from "./server.js";
 import { errorMessage } from "./errors.js";
+import { runStdio } from "./server.js";
 import { VERSION } from "./version.js";
 
 async function main(): Promise<void> {

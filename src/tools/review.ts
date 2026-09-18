@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { changeContextV2Schema, validateContextV2, type ChangeContextV2 } from "../contracts.js";
-import { CONTEXT_SCHEMA_VERSION, evidenceLimitations } from "../context.js";
 import { getConfig } from "../config.js";
+import { CONTEXT_SCHEMA_VERSION, evidenceLimitations } from "../context.js";
+import { type ChangeContextV2, changeContextV2Schema, validateContextV2 } from "../contracts.js";
 import { reviewQuestions } from "../packs/review.js";
 import { minConfidence, reviewAction, reviewComposite } from "../policy.js";
 import { evaluateGateV2 } from "../policy-v2.js";
@@ -9,23 +9,25 @@ import { asNoul, asScore, resultV2 } from "../result.js";
 import { systemOne } from "../typesafe.js";
 import { assertThresholdOrder } from "../validation.js";
 
-const legacyReviewInputSchema = z.object({
-  request: z.string().min(1).max(20_000).describe("What the user asked for"),
-  diff: z.string().min(1).max(200_000).describe("Proposed patch, file excerpt, or change summary"),
-  tests: z.string().max(100_000).optional().describe("Test output if any"),
-  changed_files: z.array(z.string().min(1).max(500)).max(1_000).default([]),
-  repository_context: z.string().max(100_000).optional(),
-  evidence_complete: z.boolean().default(true),
-  context_version: z.string().default(CONTEXT_SCHEMA_VERSION),
-  truncated: z.boolean().default(false),
-  auto_accept: z.number().min(0).max(1).optional(),
-  review_at: z.number().min(0).max(1).optional(),
-  model: z.string().optional(),
-}).superRefine((input, ctx) => {
-  if (input.auto_accept !== undefined && input.review_at !== undefined && input.review_at > input.auto_accept) {
-    ctx.addIssue({ code: "custom", message: "review_at must be <= auto_accept", path: ["review_at"] });
-  }
-});
+const legacyReviewInputSchema = z
+  .object({
+    request: z.string().min(1).max(20_000).describe("What the user asked for"),
+    diff: z.string().min(1).max(200_000).describe("Proposed patch, file excerpt, or change summary"),
+    tests: z.string().max(100_000).optional().describe("Test output if any"),
+    changed_files: z.array(z.string().min(1).max(500)).max(1_000).default([]),
+    repository_context: z.string().max(100_000).optional(),
+    evidence_complete: z.boolean().default(true),
+    context_version: z.string().default(CONTEXT_SCHEMA_VERSION),
+    truncated: z.boolean().default(false),
+    auto_accept: z.number().min(0).max(1).optional(),
+    review_at: z.number().min(0).max(1).optional(),
+    model: z.string().optional(),
+  })
+  .superRefine((input, ctx) => {
+    if (input.auto_accept !== undefined && input.review_at !== undefined && input.review_at > input.auto_accept) {
+      ctx.addIssue({ code: "custom", message: "review_at must be <= auto_accept", path: ["review_at"] });
+    }
+  });
 
 export const reviewV2InputSchema = z.object({
   context: changeContextV2Schema,
@@ -70,20 +72,21 @@ export async function runReview(input: ReviewInput) {
     testGap: testGap.score,
     blastRadius: blastRadius.score,
   });
-  const action = input.evidence_complete && !input.truncated && !result.truncated
-    ? reviewAction({
-        composite,
-        safeToApply: safeToApply.noul,
-        minConfidence: minConfidence([
-          correctness.confidence,
-          specMatch.confidence,
-          testGap.confidence,
-          blastRadius.confidence,
-        ]),
-        autoAccept,
-        reviewAt,
-      })
-    : "review" as const;
+  const action =
+    input.evidence_complete && !input.truncated && !result.truncated
+      ? reviewAction({
+          composite,
+          safeToApply: safeToApply.noul,
+          minConfidence: minConfidence([
+            correctness.confidence,
+            specMatch.confidence,
+            testGap.confidence,
+            blastRadius.confidence,
+          ]),
+          autoAccept,
+          reviewAt,
+        })
+      : ("review" as const);
   const limitations = evidenceLimitations({
     evidence_complete: input.evidence_complete,
     truncated: input.truncated || result.truncated,
@@ -91,6 +94,7 @@ export async function runReview(input: ReviewInput) {
   });
   return {
     schema_version: "1",
+    deprecated_input_schema: "v1",
     tool: "jev_review",
     context_schema_version: input.context_version,
     pack: { id: "review", version: "1" },

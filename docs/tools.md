@@ -37,7 +37,9 @@ Fan-out: `next` (`continue` | `retry` | `ask_user` | `stop`), `model_tier`, `foc
 
 The canonical diff review gate. Call before declaring a patch done. It does not apply the patch and there is no separate `jev_check_diff` tool.
 
-Arguments:
+**Input schemas:** the v2 `{ "context": <context-v2> }` form is the supported contract. The legacy flat v1 form below is **deprecated** — v1 results carry `deprecated_input_schema: "v1"` and the form is scheduled for removal in the next minor release.
+
+Arguments (legacy v1):
 
 - `request`, `diff`
 - optional `tests`, `changed_files`, `repository_context`

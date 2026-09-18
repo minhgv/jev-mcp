@@ -1,4 +1,4 @@
-import { deriveEvidenceState, type ChangeContextV2 } from "./contracts.js";
+import { type ChangeContextV2, deriveEvidenceState } from "./contracts.js";
 
 export type GateAction = "auto" | "review" | "escalate";
 
@@ -22,7 +22,10 @@ export function evaluateGateV2(input: {
   const evidence = deriveEvidenceState(input.context);
   const reasons = new Set(evidence.reason_codes);
   if (input.tool !== "jev_review") reasons.add("specialist_tool_not_gate_capable");
-  if (input.context.provenance.mode !== "trusted_adapter" || !input.trustedAdapterIds.includes(input.context.provenance.adapter_id)) {
+  if (
+    input.context.provenance.mode !== "trusted_adapter" ||
+    !input.trustedAdapterIds.includes(input.context.provenance.adapter_id)
+  ) {
     reasons.add("untrusted_provenance");
   }
   if (evidence.protected_classes.length > 0) reasons.add("protected_path");
@@ -37,8 +40,11 @@ export function evaluateGateV2(input: {
   if (input.context.policy_profile !== "ci") reasons.add("advisory_policy_profile");
 
   const reasonCodes = [...reasons];
-  const hasEscalation = input.modelAction === "escalate"
-    || reasonCodes.some((reason) => ["required_check_not_passed", "verification_subject_mismatch", "invalid_model_output"].includes(reason));
+  const hasEscalation =
+    input.modelAction === "escalate" ||
+    reasonCodes.some((reason) =>
+      ["required_check_not_passed", "verification_subject_mismatch", "invalid_model_output"].includes(reason),
+    );
   const action: GateAction = hasEscalation ? "escalate" : reasonCodes.length > 0 ? "review" : "auto";
   const eligible = action === "auto" && input.context.policy_profile === "ci" && input.tool === "jev_review";
   return {

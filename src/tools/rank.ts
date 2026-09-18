@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { MAX_CHOICE_OPTIONS, chunk } from "../limits.js";
-import { existsVerdict, rankQuestions, type RankCandidate } from "../packs/rank.js";
+import { chunk, MAX_CHOICE_OPTIONS } from "../limits.js";
+import { existsVerdict, type RankCandidate, rankQuestions } from "../packs/rank.js";
 import { asChoice, asNoul } from "../result.js";
 import { systemOne } from "../typesafe.js";
 
@@ -74,7 +74,10 @@ async function rankOne(query: string, candidates: RankCandidate[], topK: number,
     questions: rankQuestions(query, candidates),
     model,
   });
-  const best = asChoice(result.answers.best, candidates.map((candidate) => candidate.id));
+  const best = asChoice(
+    result.answers.best,
+    candidates.map((candidate) => candidate.id),
+  );
   const exists = asNoul(result.answers.exists).noul;
   const ranked: RankedHit[] = Object.entries(best.probabilities)
     .map(([id, probability]) => ({ id, probability }))

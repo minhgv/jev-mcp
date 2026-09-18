@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { parseQuestions, type QuestionInput } from "../questions.js";
-import { actionFromConfidence, minConfidence } from "../policy.js";
 import { getConfig } from "../config.js";
-import { systemOne } from "../typesafe.js";
+import { actionFromConfidence, minConfidence } from "../policy.js";
+import { parseQuestions, type QuestionInput } from "../questions.js";
 import { asChoice, asNoul, asScore } from "../result.js";
+import { systemOne } from "../typesafe.js";
 
 export const questionInputSchema = z.object({
   type: z.enum(["noul", "choice", "score"]).describe("Jev primitive"),
@@ -27,7 +27,10 @@ export const evaluateInputSchema = z.object({
     .describe("Shared state to judge: text or JSON"),
   questions: z
     .record(z.string(), questionInputSchema)
-    .refine((questions) => Object.keys(questions).length > 0 && Object.keys(questions).length <= 32, "questions must contain 1..32 entries")
+    .refine(
+      (questions) => Object.keys(questions).length > 0 && Object.keys(questions).length <= 32,
+      "questions must contain 1..32 entries",
+    )
     .describe("Named noul, choice, and score questions evaluated in parallel"),
   model: z.string().optional().describe("Override, default jev-latest"),
 });

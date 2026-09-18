@@ -6,9 +6,7 @@ export const DEFAULT_REVIEW_AT = 0.5;
 export const DEFAULT_BLOCK_AT = 0.75;
 export const DEFAULT_SKIP_BELOW = 0.35;
 
-export function confidenceFromProbabilities(
-  probabilities: Record<string, number>,
-): number {
+export function confidenceFromProbabilities(probabilities: Record<string, number>): number {
   const values = Object.values(probabilities);
   if (values.length === 0) {
     return 0;
@@ -164,7 +162,11 @@ export function changeRiskAction(input: {
   if (!input.evidenceComplete || input.confidence < reviewAt) {
     return input.confidence < reviewAt ? "escalate" : "review";
   }
-  if (input.risk === "high" || (input.securitySensitive ?? 0) >= autoAccept || (input.needsHumanReview ?? 0) >= autoAccept) {
+  if (
+    input.risk === "high" ||
+    (input.securitySensitive ?? 0) >= autoAccept ||
+    (input.needsHumanReview ?? 0) >= autoAccept
+  ) {
     return "review";
   }
   if (input.risk === "medium" || input.confidence < autoAccept) {

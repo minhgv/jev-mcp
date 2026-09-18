@@ -33,10 +33,7 @@ export type FitResult = {
   truncated: boolean;
 };
 
-export function fitState(
-  state: unknown,
-  questions: unknown,
-): FitResult {
+export function fitState(state: unknown, questions: unknown): FitResult {
   const questionsTokens = estimateTokens(questions);
   const budget = Math.min(
     MAX_TOTAL_TOKENS - questionsTokens,

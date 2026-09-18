@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import type { ChoiceResponse, NoulResponse, ScoreResponse, SystemOneResult } from "@typesafe-ai/sdk";
-import { JevValidationError } from "./errors.js";
 import type { ChangeContextV2 } from "./contracts.js";
-import type { GateResult } from "./policy-v2.js";
+import { JevValidationError } from "./errors.js";
 import type { PolicyAction } from "./policy.js";
+import type { GateResult } from "./policy-v2.js";
 
 export type JsonRecord = Record<string, unknown>;
 
@@ -25,7 +25,11 @@ export function jsonError(message: string): {
   };
 }
 
-export function jsonErrorV2(code: string, message: string, retryable = false): {
+export function jsonErrorV2(
+  code: string,
+  message: string,
+  retryable = false,
+): {
   isError: true;
   content: Array<{ type: "text"; text: string }>;
 } {
@@ -36,14 +40,30 @@ export function jsonErrorV2(code: string, message: string, retryable = false): {
 }
 
 export function asNoul(answer: unknown): NoulResponse {
-  if (!isRecord(answer) || answer.type !== "noul" || typeof answer.noul !== "number" || !Number.isFinite(answer.noul) || answer.noul < 0 || answer.noul > 1) {
+  if (
+    !isRecord(answer) ||
+    answer.type !== "noul" ||
+    typeof answer.noul !== "number" ||
+    !Number.isFinite(answer.noul) ||
+    answer.noul < 0 ||
+    answer.noul > 1
+  ) {
     throw new JevValidationError("Invalid Jev noul response");
   }
   return answer as unknown as NoulResponse;
 }
 
 export function asChoice(answer: unknown, allowed?: readonly string[]): ChoiceResponse {
-  if (!isRecord(answer) || answer.type !== "choice" || typeof answer.choice !== "string" || !isRecord(answer.probabilities) || typeof answer.confidence !== "number" || !Number.isFinite(answer.confidence) || answer.confidence < 0 || answer.confidence > 1) {
+  if (
+    !isRecord(answer) ||
+    answer.type !== "choice" ||
+    typeof answer.choice !== "string" ||
+    !isRecord(answer.probabilities) ||
+    typeof answer.confidence !== "number" ||
+    !Number.isFinite(answer.confidence) ||
+    answer.confidence < 0 ||
+    answer.confidence > 1
+  ) {
     throw new JevValidationError("Invalid Jev choice response");
   }
   if (allowed && !allowed.includes(answer.choice)) {
@@ -58,7 +78,18 @@ export function asChoice(answer: unknown, allowed?: readonly string[]): ChoiceRe
 }
 
 export function asScore(answer: unknown): ScoreResponse {
-  if (!isRecord(answer) || answer.type !== "score" || typeof answer.score !== "number" || !Number.isFinite(answer.score) || !isRecord(answer.legend) || !isRecord(answer.probabilities) || typeof answer.confidence !== "number" || !Number.isFinite(answer.confidence) || answer.confidence < 0 || answer.confidence > 1) {
+  if (
+    !isRecord(answer) ||
+    answer.type !== "score" ||
+    typeof answer.score !== "number" ||
+    !Number.isFinite(answer.score) ||
+    !isRecord(answer.legend) ||
+    !isRecord(answer.probabilities) ||
+    typeof answer.confidence !== "number" ||
+    !Number.isFinite(answer.confidence) ||
+    answer.confidence < 0 ||
+    answer.confidence > 1
+  ) {
     throw new JevValidationError("Invalid Jev score response");
   }
   for (const probability of Object.values(answer.probabilities)) {
@@ -73,7 +104,9 @@ function isRecord(value: unknown): value is Record<string, any> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function usageOf(result: SystemOneResult<Record<string, never>> | { usage: { input_tokens: number; output_tokens: number } }): {
+export function usageOf(
+  result: SystemOneResult<Record<string, never>> | { usage: { input_tokens: number; output_tokens: number } },
+): {
   input_tokens: number;
   output_tokens: number;
 } {
@@ -129,11 +162,7 @@ export function resultV2(input: ResultV2Input): Record<string, unknown> {
   };
 }
 
-export function errorResultV2(input: {
-  code: string;
-  message: string;
-  retryable: boolean;
-}): Record<string, unknown> {
+export function errorResultV2(input: { code: string; message: string; retryable: boolean }): Record<string, unknown> {
   return {
     result_schema_version: "2",
     status: "failed",

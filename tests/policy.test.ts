@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   actionFromConfidence,
+  changeRiskAction,
   codingLoopAction,
   confidenceFromProbabilities,
+  requirementAction,
   reviewAction,
   reviewComposite,
   screenRecommendation,
-  changeRiskAction,
-  requirementAction,
 } from "../src/policy.ts";
 
 test("confidence is 1 when a choice is certain", () => {
@@ -69,21 +69,12 @@ test("review composite weights correctness highest", () => {
 });
 
 test("reviewAction escalates unsafe patches", () => {
-  assert.equal(
-    reviewAction({ composite: 0.9, safeToApply: 0.2, minConfidence: 0.9 }),
-    "escalate",
-  );
+  assert.equal(reviewAction({ composite: 0.9, safeToApply: 0.2, minConfidence: 0.9 }), "escalate");
 });
 
 test("screenRecommendation blocks injection", () => {
-  assert.equal(
-    screenRecommendation({ injection: 0.9, substance: 0.9, blockAt: 0.75, reviewAt: 0.25 }),
-    "block",
-  );
-  assert.equal(
-    screenRecommendation({ injection: 0.04, substance: 0.1, blockAt: 0.75, reviewAt: 0.25 }),
-    "skip",
-  );
+  assert.equal(screenRecommendation({ injection: 0.9, substance: 0.9, blockAt: 0.75, reviewAt: 0.25 }), "block");
+  assert.equal(screenRecommendation({ injection: 0.04, substance: 0.1, blockAt: 0.75, reviewAt: 0.25 }), "skip");
   assert.equal(
     screenRecommendation({ injection: 0.04, substance: 0.9, relevance: 0.1, blockAt: 0.75, reviewAt: 0.25 }),
     "skip",

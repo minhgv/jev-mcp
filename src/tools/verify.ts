@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { getConfig } from "../config.js";
 import { verifyQuestions } from "../packs/verify.js";
+import type { PolicyAction } from "../policy.js";
 import { actionFromConfidence } from "../policy.js";
 import { asChoice } from "../result.js";
 import { systemOne } from "../typesafe.js";
-import type { PolicyAction } from "../policy.js";
 
 const evidenceSchema = z.union([
   z.string(),

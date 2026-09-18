@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { CONTEXT_SCHEMA_VERSION, evidenceLimitations } from "../context.js";
 import { getConfig } from "../config.js";
+import { CONTEXT_SCHEMA_VERSION, evidenceLimitations } from "../context.js";
 import { issueQuestions } from "../packs/issue.js";
-import { asChoice, asNoul } from "../result.js";
 import { actionFromConfidence, minConfidence, noulConfidence } from "../policy.js";
+import { asChoice, asNoul } from "../result.js";
 import { systemOne } from "../typesafe.js";
 
 export const classifyIssueInputSchema = z.object({
@@ -34,16 +34,29 @@ export async function runClassifyIssue(input: ClassifyIssueInput) {
     questions: issueQuestions(owners),
     model: input.model,
   });
-  const category = asChoice(result.answers.category, ["security", "data_integrity", "reliability", "performance", "compatibility", "usability", "maintainability", "other"]);
+  const category = asChoice(result.answers.category, [
+    "security",
+    "data_integrity",
+    "reliability",
+    "performance",
+    "compatibility",
+    "usability",
+    "maintainability",
+    "other",
+  ]);
   const severity = asChoice(result.answers.severity, ["low", "medium", "high", "critical"]);
   const urgency = asChoice(result.answers.urgency, ["low", "medium", "high"]);
   const owner = asChoice(result.answers.owner, owners);
   const reproduction = asNoul(result.answers.needs_reproduction);
-  const confidence = minConfidence([category.confidence, severity.confidence, urgency.confidence, owner.confidence, noulConfidence(reproduction.noul)]);
+  const confidence = minConfidence([
+    category.confidence,
+    severity.confidence,
+    urgency.confidence,
+    owner.confidence,
+    noulConfidence(reproduction.noul),
+  ]);
   const evidenceComplete = input.evidence_complete && !input.truncated && !result.truncated && Boolean(input.evidence);
-  const action = evidenceComplete
-    ? actionFromConfidence(confidence, config.autoAccept, config.reviewAt)
-    : "review";
+  const action = evidenceComplete ? actionFromConfidence(confidence, config.autoAccept, config.reviewAt) : "review";
   const limitations = evidenceLimitations({
     evidence_complete: input.evidence_complete,
     truncated: input.truncated || result.truncated,

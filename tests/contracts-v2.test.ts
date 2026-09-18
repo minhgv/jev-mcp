@@ -53,10 +53,12 @@ test("context v2 derives incomplete evidence instead of trusting a boolean", () 
 
 test("context v2 rejects unsupported versions and unsafe paths", () => {
   assert.throws(() => validateContextV2({ ...baseContext, context_schema_version: "9" }));
-  assert.throws(() => validateContextV2({
-    ...baseContext,
-    manifest: { complete: true, files: [{ path: "../escape.ts", change: "modified", protected_classes: [] }] },
-  }));
+  assert.throws(() =>
+    validateContextV2({
+      ...baseContext,
+      manifest: { complete: true, files: [{ path: "../escape.ts", change: "modified", protected_classes: [] }] },
+    }),
+  );
 });
 
 test("material redaction or truncation is a policy limitation", () => {

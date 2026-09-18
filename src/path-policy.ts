@@ -18,7 +18,10 @@ const rules: Array<[ProtectedClass, RegExp]> = [
   ["migration", /(^|\/)(migrations?|seeders?)(\/|$)|\.(sql|prisma)$/i],
   ["permission", /(^|\/)(permission|permissions|rbac|roles?|access.?control)(\/|$)/i],
   ["network", /(^|\/)(network|proxy|firewall|dns|ingress|egress)(\/|$)/i],
-  ["deployment", /(^|\/)(deploy|deployment|infra|terraform|k8s|kubernetes|helm)(\/|$)|(^|\/)(Dockerfile|docker-compose[^/]*)$/i],
+  [
+    "deployment",
+    /(^|\/)(deploy|deployment|infra|terraform|k8s|kubernetes|helm)(\/|$)|(^|\/)(Dockerfile|docker-compose[^/]*)$/i,
+  ],
 ];
 
 export function validateGitPath(path: string): void {
@@ -26,7 +29,7 @@ export function validateGitPath(path: string): void {
     throw new Error(`Unsafe Git path: ${path}`);
   }
   const segments = path.split("/");
-  if (segments.some((segment) => segment === ".." || segment === "" && segments.length > 1)) {
+  if (segments.some((segment) => segment === ".." || (segment === "" && segments.length > 1))) {
     throw new Error(`Unsafe Git path: ${path}`);
   }
 }

@@ -55,7 +55,9 @@ export function parseQuestion(id: string, value: QuestionInput): Question {
   }
   if (value.type === "score") {
     if (!Array.isArray(value.criteria) || value.criteria.length < 2) {
-      throw new JevValidationError(`Question ${id}: score criteria must be an array of at least two level descriptions`);
+      throw new JevValidationError(
+        `Question ${id}: score criteria must be an array of at least two level descriptions`,
+      );
     }
     const criteria = value.criteria as [string, string, ...string[]];
     const question: ScoreQuestion = {

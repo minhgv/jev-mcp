@@ -32,11 +32,7 @@ export function reviewQuestions(): Questions {
     blast_radius: {
       type: "score",
       instructions: "How wide is the blast radius if this lands?",
-      criteria: [
-        "Tiny local change",
-        "Moderate; a few modules",
-        "Wide, shared, or production-facing",
-      ] as const,
+      criteria: ["Tiny local change", "Moderate; a few modules", "Wide, shared, or production-facing"] as const,
     },
     safe_to_apply: {
       type: "noul",

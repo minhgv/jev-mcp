@@ -16,7 +16,9 @@ export const changeContextSchema = z.object({
 
 export type ChangeContext = z.infer<typeof changeContextSchema>;
 
-export function evidenceLimitations(context: Pick<ChangeContext, "evidence_complete" | "truncated" | "redacted">): string[] {
+export function evidenceLimitations(
+  context: Pick<ChangeContext, "evidence_complete" | "truncated" | "redacted">,
+): string[] {
   const limitations: string[] = [];
   if (!context.evidence_complete) limitations.push("host_marked_evidence_incomplete");
   if (context.truncated) limitations.push("context_truncated_before_evaluation");

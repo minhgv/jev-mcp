@@ -41,7 +41,11 @@ export function mockSystemOne<Q extends Questions>(request: {
   };
 }
 
-function mockQuestion(stateText: string, question: Question, state: unknown): NoulResponse | ChoiceResponse | ScoreResponse {
+function mockQuestion(
+  stateText: string,
+  question: Question,
+  state: unknown,
+): NoulResponse | ChoiceResponse | ScoreResponse {
   if (question.type === "noul") {
     return mockNoul(stateText, question, state);
   }
@@ -136,9 +140,10 @@ function mockScore(stateText: string, question: Question & { type: "score" }): S
     }
   }
 
-  const probabilities = Object.fromEntries(
-    softmax(scores).map((value, index) => [String(index), value]),
-  ) as Record<string, number>;
+  const probabilities = Object.fromEntries(softmax(scores).map((value, index) => [String(index), value])) as Record<
+    string,
+    number
+  >;
   const legend = Object.fromEntries(levels.map((level, index) => [String(index), level])) as Record<string, string>;
   const score = softmax(scores).reduce((sum, value, index) => sum + value * index, 0);
   return {

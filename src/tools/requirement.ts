@@ -1,19 +1,23 @@
 import { z } from "zod";
-import { CONTEXT_SCHEMA_VERSION, evidenceLimitations } from "../context.js";
 import { getConfig } from "../config.js";
-import { requirementQuestions, REQUIREMENT_STATUSES } from "../packs/requirement.js";
-import { asChoice } from "../result.js";
+import { CONTEXT_SCHEMA_VERSION, evidenceLimitations } from "../context.js";
+import { type REQUIREMENT_STATUSES, requirementQuestions } from "../packs/requirement.js";
 import { minConfidence, requirementAction } from "../policy.js";
+import { asChoice } from "../result.js";
 import { systemOne } from "../typesafe.js";
 import { assertThresholdOrder } from "../validation.js";
 
 const requirementInput = z.object({ id: z.string().min(1).max(200), text: z.string().min(1).max(20_000) });
 
 export const requirementInputSchema = z.object({
-  requirements: z.array(requirementInput).min(1).max(100).superRefine((requirements, ctx) => {
-    const ids = requirements.map((requirement) => requirement.id);
-    if (new Set(ids).size !== ids.length) ctx.addIssue({ code: "custom", message: "requirement ids must be unique" });
-  }),
+  requirements: z
+    .array(requirementInput)
+    .min(1)
+    .max(100)
+    .superRefine((requirements, ctx) => {
+      const ids = requirements.map((requirement) => requirement.id);
+      if (new Set(ids).size !== ids.length) ctx.addIssue({ code: "custom", message: "requirement ids must be unique" });
+    }),
   diff: z.string().min(1).max(200_000),
   tests: z.string().optional(),
   repository_context: z.string().optional(),
@@ -47,7 +51,12 @@ export async function runCheckRequirement(input: RequirementInput) {
   });
 
   const requirements = input.requirements.map((requirement, index) => {
-    const answer = asChoice(result.answers[`requirement_${index}`], ["covered", "partial", "not_covered", "not_verifiable"]);
+    const answer = asChoice(result.answers[`requirement_${index}`], [
+      "covered",
+      "partial",
+      "not_covered",
+      "not_verifiable",
+    ]);
     const status = answer.choice as (typeof REQUIREMENT_STATUSES)[number];
     return {
       id: requirement.id,

@@ -3,22 +3,19 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { errorMessage } from "./errors.js";
 import { PACK_IDS, packBody, packUri } from "./packs/index.js";
 import { jsonError, jsonErrorV2, jsonResult } from "./result.js";
-import { runCodingLoop, codingLoopInputSchema } from "./tools/coding-loop.js";
-import { runAssessChangeRisk, changeRiskInputSchema } from "./tools/change-risk.js";
-import { runClassifyIssue, classifyIssueInputSchema } from "./tools/classify-issue.js";
-import { runCheckRequirement, requirementInputSchema } from "./tools/requirement.js";
-import { runEvaluate, evaluateInputSchema } from "./tools/evaluate.js";
-import { runRank, rankInputSchema } from "./tools/rank.js";
-import { runReview, reviewInputSchema } from "./tools/review.js";
+import { changeRiskInputSchema, runAssessChangeRisk } from "./tools/change-risk.js";
+import { classifyIssueInputSchema, runClassifyIssue } from "./tools/classify-issue.js";
+import { codingLoopInputSchema, runCodingLoop } from "./tools/coding-loop.js";
+import { evaluateInputSchema, runEvaluate } from "./tools/evaluate.js";
+import { rankInputSchema, runRank } from "./tools/rank.js";
+import { requirementInputSchema, runCheckRequirement } from "./tools/requirement.js";
+import { reviewInputSchema, runReview } from "./tools/review.js";
 import { runScreen, screenInputSchema } from "./tools/screen.js";
 import { runVerify, verifyInputSchema } from "./tools/verify.js";
 import { SERVER_NAME, VERSION } from "./version.js";
 
 export function createJevServer(): McpServer {
-  const server = new McpServer(
-    { name: SERVER_NAME, version: VERSION },
-    { capabilities: { tools: {}, resources: {} } },
-  );
+  const server = new McpServer({ name: SERVER_NAME, version: VERSION }, { capabilities: { tools: {}, resources: {} } });
 
   server.registerTool(
     "jev_evaluate",
@@ -236,14 +233,15 @@ export function createJevServer(): McpServer {
   return server;
 }
 
-function toolError(err: unknown, args: unknown): {
+function toolError(
+  err: unknown,
+  args: unknown,
+): {
   isError: true;
   content: Array<{ type: "text"; text: string }>;
 } {
   const isV2 = typeof args === "object" && args !== null && "context" in args;
-  return isV2
-    ? jsonErrorV2("JEV_EVALUATION_FAILED", errorMessage(err), false)
-    : jsonError(errorMessage(err));
+  return isV2 ? jsonErrorV2("JEV_EVALUATION_FAILED", errorMessage(err), false) : jsonError(errorMessage(err));
 }
 
 export async function runStdio(): Promise<void> {

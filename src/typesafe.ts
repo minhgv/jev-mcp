@@ -1,9 +1,4 @@
-import {
-  TypeSafeClient,
-  type Questions,
-  type SystemOneRequest,
-  type SystemOneResult,
-} from "@typesafe-ai/sdk";
+import { type Questions, type SystemOneRequest, type SystemOneResult, TypeSafeClient } from "@typesafe-ai/sdk";
 import { getConfig } from "./config.js";
 import { JevConfigError } from "./errors.js";
 import { fitState } from "./limits.js";
@@ -34,9 +29,7 @@ export type EvaluateResponse<Q extends Questions = Questions> = SystemOneResult<
   truncated: boolean;
 };
 
-export async function systemOne<Q extends Questions>(
-  request: EvaluateRequest<Q>,
-): Promise<EvaluateResponse<Q>> {
+export async function systemOne<Q extends Questions>(request: EvaluateRequest<Q>): Promise<EvaluateResponse<Q>> {
   const config = getConfig();
   const fitted = fitState(request.state, request.questions);
   const model = request.model?.trim() || config.model;
@@ -74,9 +67,7 @@ export async function listModels(): Promise<string[]> {
     return [`${config.model}+mock`];
   }
   if (!config.apiKey) {
-    throw new JevConfigError(
-      "Missing TYPESAFE_API_KEY. Set it in the MCP env, or set JEV_MCP_MOCK=1.",
-    );
+    throw new JevConfigError("Missing TYPESAFE_API_KEY. Set it in the MCP env, or set JEV_MCP_MOCK=1.");
   }
   const client = new TypeSafeClient({
     apiKey: config.apiKey,

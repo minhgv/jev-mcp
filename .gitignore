@@ -6,3 +6,8 @@ dist/
 *.log
 coverage/
 .DS_Store
+.sot/
+sot.db
+cbm/
+write.lock
+GRAPH_REPORT.md

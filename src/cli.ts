@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { getConfig } from "./config.js";
 import { errorMessage } from "./errors.js";
-import { listModels, systemOne } from "./typesafe.js";
 import { parseQuestions, type QuestionInput } from "./questions.js";
+import { listModels, systemOne } from "./typesafe.js";
 import { VERSION } from "./version.js";
 
 export async function runDoctor(): Promise<void> {

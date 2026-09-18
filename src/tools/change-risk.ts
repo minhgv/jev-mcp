@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { changeContextSchema, CONTEXT_SCHEMA_VERSION, evidenceLimitations } from "../context.js";
 import { getConfig } from "../config.js";
+import { CONTEXT_SCHEMA_VERSION, changeContextSchema, evidenceLimitations } from "../context.js";
 import { changeRiskQuestions } from "../packs/change-risk.js";
-import { asChoice, asNoul, asScore } from "../result.js";
 import { changeRiskAction, minConfidence, noulConfidence } from "../policy.js";
+import { asChoice, asNoul, asScore } from "../result.js";
 import { systemOne } from "../typesafe.js";
 
 export const changeRiskInputSchema = changeContextSchema.extend({
@@ -50,11 +50,12 @@ export async function runAssessChangeRisk(input: ChangeRiskInput) {
     noulConfidence(scopeDrift.noul),
     noulConfidence(humanReview.noul),
   ]);
-  const evidenceComplete = input.evidence_complete
-    && !input.truncated
-    && !result.truncated
-    && Boolean(input.tests)
-    && input.changed_files.length > 0;
+  const evidenceComplete =
+    input.evidence_complete &&
+    !input.truncated &&
+    !result.truncated &&
+    Boolean(input.tests) &&
+    input.changed_files.length > 0;
   const action = changeRiskAction({
     risk: risk.choice as "low" | "medium" | "high",
     confidence,

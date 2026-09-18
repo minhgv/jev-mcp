@@ -1,5 +1,5 @@
-import { codingLoopQuestions } from "./coding-loop.js";
 import { changeRiskQuestions } from "./change-risk.js";
+import { codingLoopQuestions } from "./coding-loop.js";
 import { issueQuestions } from "./issue.js";
 import { rankQuestions } from "./rank.js";
 import { requirementQuestions } from "./requirement.js";
@@ -7,7 +7,16 @@ import { reviewQuestions } from "./review.js";
 import { screenQuestions } from "./screen.js";
 import { VERIFY_CRITERIA, verifyQuestions } from "./verify.js";
 
-export const PACK_IDS = ["coding-loop", "review", "verify", "screen", "rank", "change-risk", "requirement", "issue"] as const;
+export const PACK_IDS = [
+  "coding-loop",
+  "review",
+  "verify",
+  "screen",
+  "rank",
+  "change-risk",
+  "requirement",
+  "issue",
+] as const;
 export type PackId = (typeof PACK_IDS)[number];
 
 export function packBody(id: PackId): unknown {

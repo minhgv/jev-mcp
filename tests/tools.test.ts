@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
+import { JevConfigError } from "../src/errors.ts";
+import { runAssessChangeRisk } from "../src/tools/change-risk.ts";
+import { runClassifyIssue } from "../src/tools/classify-issue.ts";
 import { runCodingLoop } from "../src/tools/coding-loop.ts";
 import { runEvaluate } from "../src/tools/evaluate.ts";
 import { runRank } from "../src/tools/rank.ts";
+import { runCheckRequirement } from "../src/tools/requirement.ts";
 import { runReview } from "../src/tools/review.ts";
 import { runScreen } from "../src/tools/screen.ts";
 import { runVerify } from "../src/tools/verify.ts";
-import { runAssessChangeRisk } from "../src/tools/change-risk.ts";
-import { runCheckRequirement } from "../src/tools/requirement.ts";
-import { runClassifyIssue } from "../src/tools/classify-issue.ts";
-import { JevConfigError } from "../src/errors.ts";
 import { systemOne } from "../src/typesafe.ts";
 
 const previousMock = process.env.JEV_MCP_MOCK;
@@ -90,10 +90,7 @@ test("review flags a destructive diff", async () => {
 
 test("verify helmet ordinance claims", async () => {
   const result = await runVerify({
-    claims: [
-      "Wearing a helmet is optional for adult riders.",
-      "The ordinance mentions reflective gear.",
-    ],
+    claims: ["Wearing a helmet is optional for adult riders.", "The ordinance mentions reflective gear."],
     evidence:
       "City Bicycle Safety Ordinance, s.4: Every rider must wear an approved helmet at all times while cycling on public roads. Riders under 18 must also wear reflective gear after dark.",
   });
@@ -192,9 +189,9 @@ test("requirement check returns criterion-level statuses", async () => {
   });
   assert.equal(result.tool, "jev_check_requirement");
   assert.equal(result.requirements.length, 2);
-  assert.ok(result.requirements.every((item) =>
-    ["covered", "partial", "not_covered", "not_verifiable"].includes(item.status),
-  ));
+  assert.ok(
+    result.requirements.every((item) => ["covered", "partial", "not_covered", "not_verifiable"].includes(item.status)),
+  );
 });
 
 test("issue classification constrains owner choices", async () => {

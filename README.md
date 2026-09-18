@@ -18,6 +18,8 @@ Jev is a typed decision model, not a coding agent. The host owns files, Git, she
 | `jev_rank` | Rank a candidate list supplied by the host |
 | `jev_evaluate` | Escape hatch for a custom typed question pack |
 
+`jev_review` accepts a legacy flat v1 input and the v2 `{ "context": … }` contract. The v1 form is deprecated (results carry `deprecated_input_schema: "v1"`) and will be removed in the next minor release; new adapters should send context v2.
+
 Every tool returns typed answers, usage, truncation metadata, and a deterministic `action`:
 
 - `auto` — the configured policy permits automated continuation.

@@ -1,5 +1,5 @@
-import { collectGitContext } from "./collector.js";
 import type { PolicyProfile } from "./collector.js";
+import { collectGitContext } from "./collector.js";
 
 export async function runContext(argv: string[]): Promise<void> {
   const args = parseArgs(argv);

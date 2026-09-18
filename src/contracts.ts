@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { protectedClassesForPath, type ProtectedClass, validateGitPath } from "./path-policy.js";
+import { type ProtectedClass, protectedClassesForPath, validateGitPath } from "./path-policy.js";
 
 export const CONTEXT_SCHEMA_VERSION_V2 = "2" as const;
 export const RESULT_SCHEMA_VERSION_V2 = "2" as const;
@@ -90,7 +90,14 @@ export const changeContextV2Schema = z.object({
   }),
   sections: z.array(sectionSchema).max(32),
   requirements: z.array(requirementSchema).max(100).default([]),
-  risk_signals: riskSignalsSchema.default({ security_sensitive: false, operational_impact: 0, compatibility_risk: 0, blast_radius: 0, reversible: true, scope_drift: false }),
+  risk_signals: riskSignalsSchema.default({
+    security_sensitive: false,
+    operational_impact: 0,
+    compatibility_risk: 0,
+    blast_radius: 0,
+    reversible: true,
+    scope_drift: false,
+  }),
   verification: z.object({
     required_check_ids: z.array(z.string().min(1).max(128)).max(100),
     records: z.array(verificationRecordSchema).max(100),
@@ -156,5 +163,9 @@ export function deriveEvidenceState(context: ChangeContextV2): EvidenceState {
   }
 
   const protectedClasses = context.manifest.files.flatMap((file) => file.protected_classes);
-  return { complete: reasons.size === 0, reason_codes: [...reasons], protected_classes: [...new Set(protectedClasses)] };
+  return {
+    complete: reasons.size === 0,
+    reason_codes: [...reasons],
+    protected_classes: [...new Set(protectedClasses)],
+  };
 }
